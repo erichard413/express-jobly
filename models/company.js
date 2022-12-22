@@ -51,10 +51,11 @@ class Company {
 
   static async findAll(name=null, minEmployees=null, maxEmployees=null) {
     // error handler
+    console.log(typeof +minEmployees);
     if (name != null && !(typeof name === 'string')){
       throw new ExpressError("name should be a string!", 400);
     }
-    if (minEmployees != null && !(typeof minEmployees === 'number') || maxEmployees != null && !(typeof maxEmployees === 'number')) {
+    if (minEmployees != null && (isNaN(minEmployees)) || maxEmployees != null && (isNaN(maxEmployees))) {
       throw new ExpressError("minEmployees & maxEmployees must be a number", 400);
     }
     if ((minEmployees && maxEmployees) && minEmployees > maxEmployees) {
