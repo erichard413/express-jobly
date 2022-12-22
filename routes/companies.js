@@ -51,8 +51,10 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  */
 
 router.get("/", async function (req, res, next) {
+  // get filter data from params
+  const {name, minEmployees, maxEmployees} = req.query;
   try {
-    const companies = await Company.findAll();
+    const companies = await Company.findAll(name, minEmployees, maxEmployees);
     return res.json({ companies });
   } catch (err) {
     return next(err);

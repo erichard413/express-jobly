@@ -1,7 +1,7 @@
 "use strict";
 
 const db = require("../db");
-const { BadRequestError, NotFoundError } = require("../expressError");
+const { BadRequestError, NotFoundError, ExpressError } = require("../expressError");
 const { sqlForPartialUpdate } = require("../helpers/sql");
 
 /** Related functions for companies. */
@@ -49,15 +49,57 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
-    const companiesRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           ORDER BY name`);
+  static async findAll(name=null, minEmployees=null, maxEmployees=null) {
+    // error handler
+    if (name != null && !(typeof name === 'string')){
+      throw new ExpressError("name should be a string!", 400);
+    }
+    if (minEmployees != null && !(typeof minEmployees === 'number') || maxEmployees != null && !(typeof maxEmployees === 'number')) {
+      throw new ExpressError("minEmployees & maxEmployees must be a number", 400);
+    }
+    if ((minEmployees && maxEmployees) && minEmployees > maxEmployees) {
+      throw new ExpressError("minEmployees value cannot exceed maxEmployees value!", 400);
+    }
+    // declare queryString beginning, set idx & params
+    let queryString = `SELECT handle,
+        name,
+        description,
+        num_employees AS "numEmployees",
+        logo_url AS "logoUrl"
+        FROM companies`
+    let idx = 1;
+    let params = [];
+    if (name || minEmployees || maxEmployees) {
+      queryString += ` WHERE`
+    } 
+    if(name) {
+      // convert name string to ILIKE SQL format & add to query string
+      let nameLike = `%${name}%`
+      params.push(nameLike);
+      queryString += ` name ILIKE $${idx}`
+      idx++;
+      }
+    if (minEmployees) {
+      // add minEmployees to query string
+      if (name) {
+        queryString += ` AND`
+      }
+      params.push(minEmployees);
+      queryString += ` num_employees >= $${idx}`
+      idx++;
+    }
+    if (maxEmployees) {
+      // add maxEmployees to query string
+      if (name || minEmployees) {
+        queryString += ` AND`
+      }
+      params.push(maxEmployees);
+      queryString += ` num_employees <= $${idx}`
+      idx++;
+    }
+    // add final order by to query string, and query the DB.
+    queryString += ` ORDER BY name`
+    const companiesRes = await db.query(queryString, params);
     return companiesRes.rows;
   }
 
