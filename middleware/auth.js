@@ -4,7 +4,7 @@
 
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
-const { UnauthorizedError } = require("../expressError");
+const { UnauthorizedError, ExpressError } = require("../expressError");
 
 
 /** Middleware: Authenticate user.
@@ -42,13 +42,29 @@ function ensureLoggedIn(req, res, next) {
   }
 }
 
-/** Middleware to check for admin.
+/** Middleware to check for admin & log in.
  * 
  * If not, raises Unauthorized.
  */
-
+function ensureAdmin(req, res, next) {
+  if(!res.locals.user) throw new UnauthorizedError();
+  if(res.locals.user.isAdmin == false){
+    return next(new ExpressError("This activity is restricted to admin users", 401))
+  }
+  return next();
+}
+function ensureAdminOrUser(req, res, next) {
+  if(!res.locals.user) throw new UnauthorizedError();
+  if(res.locals.user.isAdmin == false){
+    if(res.locals.user.username != req.params.username){
+    return next(new ExpressError("You do not have permission to access that", 401))
+  }}
+  return next();
+}
 
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
+  ensureAdmin,
+  ensureAdminOrUser,
 };

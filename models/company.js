@@ -52,7 +52,6 @@ class Company {
   static async findAll(name=null, minEmployees=null, maxEmployees=null) {
     // error handler
     // -> conflicted on this typeof name check; the data being passed here will always be string data regardless. If I were to make this check for isNaN(name) and handle it, it would limit the functionality of my app as it is theoretically possible for a company to have a number in its name (ie: Rapid7)
-
     if (name != null && !(typeof name === 'string')){
       throw new ExpressError("name should be a string!", 400);
     }
