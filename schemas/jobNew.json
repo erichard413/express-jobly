@@ -1,0 +1,29 @@
+{
+  "$schema": "",
+  "$id": "",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 25
+    },
+    "salary": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "equity": {
+      "type": "number",
+      "maximum": 1.0
+    },
+    "company_handle": {
+      "type": "string",
+      "maxLength": 25
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "company_handle"
+  ]
+}
