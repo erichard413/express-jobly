@@ -60,6 +60,48 @@ const {
             }]
         )
     })
+    test("works: find all jobs by title", async function(){
+        let jobs = await Job.findAll("test", null, null);
+        expect(jobs).toEqual(
+            [{
+                id: expect.any(Number),
+                title: 'tester',
+                salary: 1,
+                equity: "0.01",
+                company_handle: 'c1'
+            }]
+        )
+    })
+    test("works: find all jobs by minSalary", async function(){
+        let jobs = await Job.findAll(null, 1, null);
+        expect(jobs).toEqual(
+            [{
+                id: expect.any(Number),
+                title: 'tester',
+                salary: 1,
+                equity: "0.01",
+                company_handle: 'c1'
+            }]
+        )
+    })
+    test("works: find all jobs by hasEquity=true", async function(){
+        let jobs = await Job.findAll(null, null, "true");
+        expect(jobs).toEqual(
+            [{
+                id: expect.any(Number),
+                title: 'tester',
+                salary: 1,
+                equity: "0.01",
+                company_handle: 'c1'
+            }]
+        )
+    })
+    test("works: find all jobs by hasEquity=false", async function(){
+        let jobs = await Job.findAll(null, null, "false");
+        expect(jobs).toEqual(
+            []
+        )
+    })
   });
     /************************************** get By Id */
     
@@ -116,5 +158,18 @@ const {
         } catch (e) {
             expect(e instanceof NotFoundError).toBeTruthy();
         }
+    })
+  })
+    /************************************** find jobs by company handle */
+  describe("get jobs by company handle", ()=>{
+    test("works: get jobs", async()=>{
+        let result = await Job.companyJobs('c1');
+        expect(result).toEqual([{
+            id : expect.any(Number),
+            title: "tester",
+            salary: 1,
+            equity: "0.01"
+        }]
+        )
     })
   })

@@ -42,8 +42,10 @@ router.post("/", ensureAdmin, async function(req, res, next) {
  */
 
 router.get("/", async function(req, res, next) {
+    // get filters from query string
+    const { title, minSalary, hasEquity } = req.query;
     try {
-        const jobs = await Job.findAll();
+        const jobs = await Job.findAll(title, minSalary, hasEquity);
         return res.json({ jobs });
     } catch(e) {
         return next(e);

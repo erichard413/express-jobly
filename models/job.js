@@ -22,16 +22,97 @@ class Job {
         const job = result.rows[0];
         return job;
     }
-    /** show all jobs */
-    static async findAll() {
-        const result = await db.query(
-            `SELECT id, title, salary, equity, company_handle
-            FROM jobs;
+    /** show all jobs
+     * filter options-> title, minSalary, hasEquity
+     * */
+    
+    // static async findAll() {
+    //     const result = await db.query(
+    //         `SELECT id, title, salary, equity, company_handle
+    //         FROM jobs;
+    //         `
+    //     )
+    //     return result.rows;
+    // }
+
+    static async findAll(title=null, minSalary=null, hasEquity=null) {
+        // error handler -> making sure our query param does not include multiple filters of the same type.
+        let equity;
+
+        if (title != null && (typeof title === 'object')) {
+            throw new ExpressError('More than one title received, error!', 400);
+        }
+        if (minSalary != null && (typeof minSalary === 'object')) {
+            throw new ExpressError('More than one minSalary filter received, error!', 400);
+        }
+        if (hasEquity != null && (typeof hasEquity === 'object')) {
+            throw new ExpressError('More than one hasEquity filter received, error!', 400);
+        }
+        // error handler -> making sure our data is correctly formatted
+        if (title != null && !(typeof title ==='string')){
+            throw new ExpressError('Title should be a string!',400);
+        }
+        if (minSalary != null && isNaN(minSalary)) {
+            throw new ExpressError('minSalary must be a number!', 400);
+        }
+        if (hasEquity != null) {
+            equity = hasEquity.toLowerCase();
+            if (equity !== "true" && equity !== "false") {
+                throw new ExpressError('hasEquity must be a boolean', 400);
+            }
+        }
+        // declare QueryString begining, set id & params
+        let queryString = `SELECT id, title, salary, equity, company_handle
+            FROM jobs
             `
-        )
-        return result.rows;
+        let idx = 1;
+        let params = [];
+        if (title || minSalary || equity) {
+            queryString += ` WHERE`
+        }
+        if(title) {
+            // convert title string to ILIKE SQL format & add to query string
+            let titleLike = `%${title}%`
+            params.push(titleLike);
+            queryString += ` title ILIKE $${idx}`
+            idx++;
+        }
+        if(minSalary) {
+            // add minSalary to queryString
+            if (minSalary) {
+                if (title) {
+                    queryString += ` AND`
+                }
+            }
+            params.push(minSalary);
+            queryString += ` salary >=$${idx}`
+            idx++;
+        }
+        if(equity === "true") {
+            // add hasEquity to queryString
+            if (title || minSalary) {
+                queryString += ` AND`
+            }
+                queryString += ` equity > 0`
+                idx++;
+        } else if (equity ==="false") {
+            if (title || minSalary) {
+                queryString += ` AND`
+            }
+                queryString += ` equity=0 OR null`
+                idx++;
+        }
+        // add final order by to query string, and query the DB
+        queryString += ` ORDER BY title`
+        console.log(queryString)
+        console.log(equity)
+        
+        const jobsRes = await db.query(queryString, params);
+        return jobsRes.rows;
     }
-    /** get a single job by id */
+
+    /** get a single job by id 
+    */
     static async get(id) {
         const result = await db.query(
             `SELECT id, title, salary, equity, company_handle
@@ -86,6 +167,14 @@ class Job {
             [id]);
         const job = result.rows[0];
         if (!job) throw new NotFoundError(`No job: ${id}`)
+    }
+    //** get jobs with company_handle */
+    static async companyJobs(handle) {
+        const result = await db.query(
+            `SELECT id, title, salary, equity FROM jobs WHERE company_handle=$1`, [handle]
+        )
+        const jobs = result.rows;
+        return jobs;
     }
 }
 
