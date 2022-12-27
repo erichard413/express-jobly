@@ -12,6 +12,7 @@ const Job = require("../models/job")
 const { createToken } = require("../helpers/tokens");
 const userNewSchema = require("../schemas/userNew.json");
 const userUpdateSchema = require("../schemas/userUpdate.json");
+const adminCreateUser = require("../schemas/adminCreateUser.json");
 
 const router = express.Router();
 
@@ -21,6 +22,8 @@ const router = express.Router();
  * Adds a new user. This is not the registration endpoint --- instead, this is
  * only for admin users to add new users. The new user being added can be an
  * admin.
+ * 
+ * Password is randomly generated and does not need to fed into the request.
  *
  * This returns the newly created user and an authentication token for them:
  *  {user: { username, firstName, lastName, email, isAdmin }, token }
@@ -30,7 +33,7 @@ const router = express.Router();
 
 router.post("/", ensureAdmin, async function (req, res, next) {
   try {
-    const validator = jsonschema.validate(req.body, userNewSchema);
+    const validator = jsonschema.validate(req.body, adminCreateUser);
     if (!validator.valid) {
       const errs = validator.errors.map(e => e.stack);
       throw new BadRequestError(errs);
@@ -60,6 +63,17 @@ router.post("/:username/jobs/:id", ensureAdminOrUser, async function (req, res, 
   }
 })
 
+/** PATCH /username/jobs/id -> admin can decision the status of the application use options interested, applied, rejected, accepted { state: applied } */
+router.patch("/:username/jobs/:id", ensureAdmin, async(req, res, next)=>{
+  const state = req.body.state;
+  const {username, id} = req.params;
+  try {
+    const result = await User.appSetState(state, username, id);
+    return res.json({username, jobId: id, state: state});
+  } catch(err) {
+    return next(err);
+  }
+})
 
 /** GET / => { users: [ {username, firstName, lastName, email }, ... ] }
  *

@@ -31,7 +31,6 @@ describe("POST /users", function () {
           username: "u-new",
           firstName: "First-new",
           lastName: "Last-newL",
-          password: "password-new",
           email: "new@email.com",
           isAdmin: false,
         })
@@ -55,7 +54,6 @@ describe("POST /users", function () {
           username: "u-new",
           firstName: "First-new",
           lastName: "Last-newL",
-          password: "password-new",
           email: "new@email.com",
           isAdmin: true,
         })
@@ -355,6 +353,29 @@ describe("PATCH /users/:username", () => {
     expect(isSuccessful).toBeTruthy();
   });
 });
+
+/************************************** PATCH /users/:username/jobs/:id */
+describe("PATCH /users/:username/jobs/:id", function() {
+  test("works for admin user", async()=>{
+    const jobId = await db.query(`SELECT id FROM jobs WHERE title='j2'`);
+    await User.apply("u2", jobId.rows[0].id);
+    const results = await request(app).patch(`/users/u2/jobs/${jobId.rows[0].id}`).send({state: "accepted"}).set("authorization", `Bearer ${admToken}`);
+    expect(results.body).toEqual({
+      username: "u2",
+      jobId: `${jobId.rows[0].id}`,
+      state: "accepted"
+    })
+  })
+  test("doesn't work for not-admin", async()=>{
+    try {
+        const jobId = await db.query(`SELECT id FROM jobs WHERE title='j2'`);
+        await User.apply("u2", jobId.rows[0].id);
+        const results = await request(app).patch(`/users/u2/jobs/${jobId.rows[0].id}`).send({state: "accepted"}).set("authorization", `Bearer ${u1Token}`);
+    } catch(e) {
+        expect(e.status).toBe(401);
+    }
+  })
+})
 
 /************************************** DELETE /users/:username */
 

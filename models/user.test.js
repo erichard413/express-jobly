@@ -65,8 +65,7 @@ describe("register", function () {
 
   test("works", async function () {
     let user = await User.register({
-      ...newUser,
-      password: "password",
+      ...newUser
     });
     expect(user).toEqual(newUser);
     const found = await db.query("SELECT * FROM users WHERE username = 'new'");
@@ -78,7 +77,6 @@ describe("register", function () {
   test("works: adds admin", async function () {
     let user = await User.register({
       ...newUser,
-      password: "password",
       isAdmin: true,
     });
     expect(user).toEqual({ ...newUser, isAdmin: true });
@@ -91,12 +89,10 @@ describe("register", function () {
   test("bad request with dup data", async function () {
     try {
       await User.register({
-        ...newUser,
-        password: "password",
+        ...newUser
       });
       await User.register({
-        ...newUser,
-        password: "password",
+        ...newUser
       });
       fail();
     } catch (err) {
@@ -265,6 +261,27 @@ describe("get all jobs for user", function(){
     try {
       await User.apply('bad', 'bad');
     } catch(e) {
+      expect(e.status).toBe(404);
+    }
+  })
+})
+
+/************************************** application state updates */
+describe("updating enum state for applications", function(){
+  test("works - updates status for an applied job for a user", async()=>{
+    let id = await db.query(`SELECT job_id FROM applications WHERE username='u2'`);
+    console.log(id)
+    const result = await User.appSetState('accepted', 'u2', id.rows[0].job_id)
+    expect(result).toEqual({
+      username: 'u2',
+      job_id: id.rows[0].job_id,
+      state: 'accepted'
+    })
+  })
+  test("error when bad info", async()=>{
+    try {
+      await User.appSetState('bad', 'info', 'lol')
+    } catch (e) {
       expect(e.status).toBe(404);
     }
   })
