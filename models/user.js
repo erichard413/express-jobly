@@ -10,6 +10,7 @@ const {
 } = require("../expressError");
 
 const { BCRYPT_WORK_FACTOR } = require("../config.js");
+const Job = require("./job");
 
 /** Related functions for users. */
 
@@ -88,7 +89,7 @@ class User {
           lastName,
           email,
           isAdmin,
-        ],
+        ]
     );
 
     const user = result.rows[0];
@@ -202,7 +203,35 @@ class User {
     );
     const user = result.rows[0];
 
-    if (!user) throw new NotFoundError(`No user: ${username}`);
+    if (!user) {
+      throw new NotFoundError(`No user: ${username}`);
+    } 
+  }
+
+  /** Apply for a job */
+
+  static async apply(username, jobId) {
+    let user = await User.get(username);
+    let job = await Job.get(jobId);
+    let result = await db.query(`
+      INSERT INTO applications (username, job_id) VALUES ($1, $2) RETURNING username, job_id
+    `, [username, jobId]);
+
+    const application = result.rows[0];
+    if (!application.job_id) { throw new NotFoundError(`Error! Invalid information`, 404) } 
+    return application;
+  }
+  /** Get all jobs for user by username */
+
+  static async getAppliedJobs(username) {
+    try {
+        const results = await db.query(`SELECT job_id FROM applications WHERE username=$1`, [username]);
+        const jobs = results.rows.map(r => r.job_id);
+        return jobs;
+    } catch(e) {
+        throw new NotFoundError("Error! Invalid information", 404);
+    }
+    
   }
 }
 

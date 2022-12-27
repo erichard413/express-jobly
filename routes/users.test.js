@@ -14,6 +14,7 @@ const {
   u1Token,
   admToken,
 } = require("./_testCommon");
+const Job = require("../models/job.js");
 
 beforeAll(commonBeforeAll);
 beforeEach(commonBeforeEach);
@@ -206,6 +207,7 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        jobs: expect.any(Array)
       },
     });
   });
@@ -232,6 +234,7 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        jobs: expect.any(Array)
       },
     });
   });
@@ -389,3 +392,44 @@ describe("DELETE /users/:username", function () {
     expect(resp.statusCode).toEqual(404);
   });
 });
+
+/************************************** POST /users/:username/jobs/:jobid */
+
+describe("POST /users/username/jobs/id", function() {
+  test("works - applies for job with logged in user = username", async function() {
+    const getJob = await db.query(`SELECT id FROM jobs`);
+    const id = getJob.rows[0].id
+    const resp = await request(app).post(`/users/u1/jobs/${id}`).set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      "applied" : `${id}`
+    })
+  })
+  test("works - applies for job with admin user", async function() {
+    const getJob = await db.query(`SELECT id FROM jobs`);
+    const id = getJob.rows[0].id
+    const resp = await request(app).post(`/users/u1/jobs/${id}`).set("authorization", `Bearer ${admToken}`);
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      "applied" : `${id}`
+    })
+  })
+  test("doesn't work for different user - applies for job with admin user", async function() {
+    try {
+        const getJob = await db.query(`SELECT id FROM jobs`);
+        const id = getJob.rows[0].id
+        const resp = await request(app).post(`/users/u2/jobs/${id}`).set("authorization", `Bearer ${u1Token}`);
+    } catch(err) {
+        expect(err.statusCode).toEqual(401)
+    }
+  })
+  test("doesn't work for not logged in user", async function() {
+    try {
+        const getJob = await db.query(`SELECT id FROM jobs`);
+        const id = getJob.rows[0].id
+        const resp = await request(app).post(`/users/u2/jobs/${id}`);
+    } catch(err) {
+        expect(err.statusCode).toEqual(401)
+    }
+  })
+})

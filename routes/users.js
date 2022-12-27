@@ -8,6 +8,7 @@ const express = require("express");
 const { ensureLoggedIn, ensureAdmin, ensureAdminOrUser } = require("../middleware/auth");
 const { BadRequestError, ExpressError } = require("../expressError");
 const User = require("../models/user");
+const Job = require("../models/job")
 const { createToken } = require("../helpers/tokens");
 const userNewSchema = require("../schemas/userNew.json");
 const userUpdateSchema = require("../schemas/userUpdate.json");
@@ -43,6 +44,22 @@ router.post("/", ensureAdmin, async function (req, res, next) {
   }
 });
 
+/** POST /username/jobs/id
+ * 
+ * This route will allow a user to apply for a job, this functionality is limited to logged in user, OR admin user 
+ * Returns { applied: jobId }; 
+*/
+
+router.post("/:username/jobs/:id", ensureAdminOrUser, async function (req, res, next) {
+  const { username, id } = req.params;
+  try {
+    const result = await User.apply(username, id);
+    return res.json({applied: id});
+  } catch(err) {
+    return next(err)
+  }
+})
+
 
 /** GET / => { users: [ {username, firstName, lastName, email }, ... ] }
  *
@@ -71,6 +88,8 @@ router.get("/", ensureAdmin, async function (req, res, next) {
 router.get("/:username", ensureAdminOrUser, async function (req, res, next) {
   try {
     const user = await User.get(req.params.username);
+    const jobs = await User.getAppliedJobs(req.params.username);
+    user['jobs'] = jobs;
     return res.json({ user });
   } catch (err) {
     return next(err);

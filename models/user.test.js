@@ -212,7 +212,7 @@ describe("update", function () {
 /************************************** remove */
 
 describe("remove", function () {
-  test("works", async function () {
+  test("works - delete user with username", async function () {
     await User.remove("u1");
     const res = await db.query(
         "SELECT * FROM users WHERE username='u1'");
@@ -228,3 +228,44 @@ describe("remove", function () {
     }
   });
 });
+
+/************************************** apply */
+
+describe("apply for a job", function(){
+  test("works - apply for a job", async ()=>{
+    let id = await db.query(`SELECT id FROM jobs WHERE company_handle='c1'`);
+    const result = await User.apply('u1', id.rows[0].id);
+    expect(result).toEqual(
+      {
+        "username" : "u1",
+        "job_id" : id.rows[0].id
+      }
+    )
+  })
+  test("doesn't work - bad info", async ()=>{
+    let id = "bad"
+    try {
+      const result = await User.apply('u1', id);
+    } catch(e) {
+      expect(e);
+    }
+  })
+})
+
+/************************************** get all applied to jobs for user */
+
+describe("get all jobs for user", function(){
+  test("works - gets all applied jobs for user", async ()=>{
+    let id = await db.query(`SELECT id FROM jobs WHERE company_handle='c1'`);
+    await User.apply('u1', id.rows[0].id);
+    const result = await User.getAppliedJobs('u1');
+    expect(result).toEqual([id.rows[0].id]);
+  })
+  test("doesn't work - bad info", async ()=>{
+    try {
+      await User.apply('bad', 'bad');
+    } catch(e) {
+      expect(e.status).toBe(404);
+    }
+  })
+})
