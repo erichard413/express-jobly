@@ -270,7 +270,6 @@ describe("get all jobs for user", function(){
 describe("updating enum state for applications", function(){
   test("works - updates status for an applied job for a user", async()=>{
     let id = await db.query(`SELECT job_id FROM applications WHERE username='u2'`);
-    console.log(id)
     const result = await User.appSetState('accepted', 'u2', id.rows[0].job_id)
     expect(result).toEqual({
       username: 'u2',

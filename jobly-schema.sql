@@ -35,3 +35,10 @@ CREATE TABLE applications (
   PRIMARY KEY (username, job_id),
   state state DEFAULT 'applied'
 );
+
+CREATE TABLE technologies (
+  technology VARCHAR(25) NOT NULL,
+  job_id INTEGER
+    REFERENCES jobs ON DELETE CASCADE,
+  username VARCHAR(25) REFERENCES users ON DELETE CASCADE  
+);
